@@ -5,6 +5,9 @@ import PricingPage from './components/pricing/PricingPage';
 import InventoryPage from './components/inventory/InventoryPage';
 import BillingPage from './components/billing/BillingPage';
 
+/**
+ * Main application component that sets up routing and fetches customer data.
+ */
 function App() {
   const [customers, setCustomers] = useState([]);
 
