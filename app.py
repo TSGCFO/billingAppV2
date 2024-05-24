@@ -1,34 +1,34 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from config import DevelopmentConfig, TestingConfig, ProductionConfig
-from dotenv import load_dotenv
-import os
+from flask_cors import CORS
+import logging
 
-# Load environment variables from .env file
-load_dotenv()
-
+# Load configuration
 app = Flask(__name__)
+app.config.from_object('config.DevelopmentConfig')
+CORS(app)
 
-# Set the configuration from the environment variable or use DevelopmentConfig as default
-config_class = os.getenv('FLASK_ENV', 'development').capitalize() + 'Config'
-app.config.from_object(globals()[config_class])
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 db = SQLAlchemy(app)
 
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    companyName = db.Column(db.String(100), nullable=False)
-    legalBusinessName = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
-    address = db.Column(db.String(200))
-    city = db.Column(db.String(50))
-    state = db.Column(db.String(50))
-    zip = db.Column(db.String(20))
-    country = db.Column(db.String(50))
-    businessType = db.Column(db.String(50))
+    customerId = db.Column(db.Integer, unique=True, nullable=False)
+    companyName = db.Column(db.String(120), nullable=False)
+    legalBusinessName = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    address = db.Column(db.String(200), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    state = db.Column(db.String(100), nullable=False)
+    zip = db.Column(db.String(20), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    businessType = db.Column(db.String(100), nullable=False)
 
-    def __init__(self, companyName, legalBusinessName, email='', phone='', address='', city='', state='', zip='', country='', accountsPayable=None, businessType=''):
+    def __init__(self, customerId, companyName, legalBusinessName, email, phone, address, city, state, zip, country, businessType):
+        self.customerId = customerId
         self.companyName = companyName
         self.legalBusinessName = legalBusinessName
         self.email = email
@@ -38,34 +38,62 @@ class Customer(db.Model):
         self.state = state
         self.zip = zip
         self.country = country
-        self.accountsPayable = accountsPayable if accountsPayable is not None else []
         self.businessType = businessType
 
-@app.route('/customers', methods=['GET'])
-def get_customers():
-    customers = Customer.query.all()
-    customer_list = [{'id': c.id, 'name': c.companyName} for c in customers]
-    return jsonify(customer_list)
+# Initialize the database tables
+@app.before_request
+def create_tables():
+    if not hasattr(create_tables, 'initialized'):
+        db.create_all()
+        create_tables.initialized = True
 
 @app.route('/customers', methods=['POST'])
 def add_customer():
     data = request.get_json()
-    new_customer = Customer(
-        companyName=data['companyName'],
-        legalBusinessName=data['legalBusinessName'],
-        email=data.get('email', ''),
-        phone=data.get('phone', ''),
-        address=data.get('address', ''),
-        city=data.get('city', ''),
-        state=data.get('state', ''),
-        zip=data.get('zip', ''),
-        country=data.get('country', ''),
-        accountsPayable=data.get('accountsPayable', []),
-        businessType=data.get('businessType', '')
-    )
-    db.session.add(new_customer)
-    db.session.commit()
-    return jsonify({'message': 'Customer created successfully'}), 201
+    app.logger.info(f'Received customer data: {data}')
+    if not data:
+        return jsonify({'error': 'Invalid data'}), 400
+    try:
+        new_customer = Customer(
+            customerId=data['customerId'],
+            companyName=data['companyName'],
+            legalBusinessName=data['legalBusinessName'],
+            email=data['email'],
+            phone=data['phone'],
+            address=data['address'],
+            city=data['city'],
+            state=data['state'],
+            zip=data['zip'],
+            country=data['country'],
+            businessType=data['businessType']
+        )
+        db.session.add(new_customer)
+        db.session.commit()
+        return jsonify({'message': 'Customer added successfully'}), 201
+    except Exception as e:
+        app.logger.error(f'Error adding customer: {e}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/customers', methods=['GET'])
+def get_customers():
+    customers = Customer.query.all()
+    return jsonify([{
+        'customerId': customer.customerId,
+        'companyName': customer.companyName,
+        'legalBusinessName': customer.legalBusinessName,
+        'email': customer.email,
+        'phone': customer.phone,
+        'address': customer.address,
+        'city': customer.city,
+        'state': customer.state,
+        'zip': customer.zip,
+        'country': customer.country,
+        'businessType': customer.businessType
+    } for customer in customers])
+
+@app.route('/')
+def home():
+    return jsonify({'message': 'Hello, World!'})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
