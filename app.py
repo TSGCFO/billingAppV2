@@ -95,5 +95,10 @@ def get_customers():
 def home():
     return jsonify({'message': 'Hello, World!'})
 
+@app.route('/api/customers', methods=['GET'])
+def get_all_customers():
+    customers = Customer.query.all()
+    return jsonify([{'id': customer.customerId, 'name': customer.companyName} for customer in customers])
+
 if __name__ == '__main__':
     app.run(debug=True)

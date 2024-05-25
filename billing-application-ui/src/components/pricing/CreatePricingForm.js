@@ -1,18 +1,30 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Box, Dialog, DialogTitle, List, ListItem } from '@mui/material';
+import axios from 'axios';
 
-function CreatePricingForm({ fetchPricingOptions }) {
+function CreatePricingForm({ fetchPricingOptions, handleClose }) {
   const [pricingData, setPricingData] = useState({
     customer: '',
-    generalPricing: {}, // Standard pricing fields
+    generalPricing: {},
     additionalOptions: []
   });
   const [openPopup, setOpenPopup] = useState(false);
-  const [options, setOptions] = useState([]); // Dynamic options based on customer
+  const [options, setOptions] = useState([]);
+  const [customers, setCustomers] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/customers') // Ensure this matches your backend URL
+      .then(response => {
+        setCustomers(response.data);
+      })
+      .catch(error => {
+        console.error('There was an error fetching the customers!', error);
+      });
+  }, []);
 
   useEffect(() => {
     if (pricingData.customer) {
-      fetchPricingOptions(pricingData.customer).then(setOptions); // Fetch and set options when customer changes
+      fetchPricingOptions(pricingData.customer).then(setOptions);
     }
   }, [pricingData.customer, fetchPricingOptions]);
 
@@ -61,11 +73,14 @@ function CreatePricingForm({ fetchPricingOptions }) {
           onChange={handleInputChange}
           name="customer"
         >
-          <MenuItem value={10}>Customer 1</MenuItem>
-          <MenuItem value={20}>Customer 2</MenuItem>
+          <MenuItem value="">Select a customer</MenuItem>
+          {customers.map(customer => (
+            <MenuItem key={customer.id} value={customer.id}>
+              {customer.id} {customer.name}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
-      {/* Map over general and additional fields here */}
       <Button onClick={() => setOpenPopup(true)}>Add More Pricing Options</Button>
       {pricingData.additionalOptions.map((option) => (
         <Fragment key={option.key}>
@@ -92,6 +107,7 @@ function CreatePricingForm({ fetchPricingOptions }) {
       </Dialog>
       <Button type="submit">Save</Button>
       <Button onClick={handleReset}>Save and New</Button>
+      <Button onClick={handleClose}>Cancel</Button>
     </Box>
   );
 }
