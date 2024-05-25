@@ -1,6 +1,4 @@
 {
     "python.defaultInterpreterPath": "C:\\Users\\Hassan\\OneDrive - TSG Fulfillment\\GPT doc\\BillingAppV2\\billing-application-api\\venv\\Scripts\\python.exe",
-    "python.analysis.typeCheckingMode": "basic",
-    "CodeGPT.apiKey": "OpenAI",
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.typeCheckingMode": "basic"
 }
