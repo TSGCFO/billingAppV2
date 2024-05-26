@@ -91,14 +91,25 @@ def get_customers():
         'businessType': customer.businessType
     } for customer in customers])
 
-@app.route('/')
-def home():
-    return jsonify({'message': 'Hello, World!'})
-
 @app.route('/api/customers', methods=['GET'])
 def get_all_customers():
     customers = Customer.query.all()
     return jsonify([{'id': customer.customerId, 'name': customer.companyName} for customer in customers])
+
+@app.route('/api/pricing-options', methods=['GET'])
+def get_pricing_options():
+    customer_id = request.args.get('customerId')
+    # Implement your logic to fetch pricing options based on the customer ID.
+    # This is a placeholder; replace with actual logic.
+    pricing_options = [
+        {"key": "option1", "label": "Option 1"},
+        {"key": "option2", "label": "Option 2"}
+    ]
+    return jsonify(pricing_options)
+
+@app.route('/')
+def home():
+    return jsonify({'message': 'Hello, World!'})
 
 if __name__ == '__main__':
     app.run(debug=True)

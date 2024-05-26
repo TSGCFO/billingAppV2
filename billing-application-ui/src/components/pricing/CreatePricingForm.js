@@ -2,7 +2,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Box, Dialog, DialogTitle, List, ListItem } from '@mui/material';
 import axios from 'axios';
 
-function CreatePricingForm({ fetchPricingOptions, handleClose }) {
+function CreatePricingForm({ handleClose }) {
   const [pricingData, setPricingData] = useState({
     customer: '',
     generalPricing: {},
@@ -13,20 +13,27 @@ function CreatePricingForm({ fetchPricingOptions, handleClose }) {
   const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers') // Ensure this matches your backend URL
+    axios.get('http://localhost:5000/api/customers')
       .then(response => {
         setCustomers(response.data);
       })
       .catch(error => {
-        console.error('There was an error fetching the customers!', error);
+        console.error('Error fetching customers:', error);
       });
   }, []);
 
   useEffect(() => {
     if (pricingData.customer) {
-      fetchPricingOptions(pricingData.customer).then(setOptions);
+      axios.get('http://localhost:5000/api/pricing-options?customerId=' + pricingData.customer)
+        .then(response => {
+          console.log('Fetched pricing options:', response.data);
+          setOptions(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching pricing options:', error);
+        });
     }
-  }, [pricingData.customer, fetchPricingOptions]);
+  }, [pricingData.customer]);
 
   const handleInputChange = (event) => {
     setPricingData({ ...pricingData, [event.target.name]: event.target.value });
